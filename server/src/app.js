@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import showRoutes from "./routes/showRoutes.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/events", eventRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/shows", showRoutes);
 
 const startServer = async () => {
   await connectDB();

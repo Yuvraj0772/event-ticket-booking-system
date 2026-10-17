@@ -2,68 +2,50 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-).replace(/\/$/, "");
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function App() {
   const [events, setEvents] = useState([]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [shows, setShows] = useState([]);
+  const [selectedShow, setSelectedShow] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [showsLoading, setShowsLoading] = useState(false);
+  const [showsError, setShowsError] = useState("");
 
   useEffect(() => {
-    const controller = new AbortController();
-
     async function fetchEvents() {
       try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch(`${API_URL}/api/events`, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load events.");
-        }
+        const response = await fetch(`${API_URL}/api/events`);
+        if (!response.ok) throw new Error("Could not load events.");
 
         const data = await response.json();
-        setEvents(data.events || []);
+        setEvents(Array.isArray(data) ? data : data.events || []);
       } catch (err) {
-        if (err.name !== "AbortError") {
-          setError(err.message || "Something went wrong.");
-        }
+        setError(err.message);
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     fetchEvents();
-
-    return () => controller.abort();
   }, []);
 
-  const categories = [
-    "All",
-    "Movie",
-    "Concert",
-    "Sports",
-    "Theatre",
-    "Other",
-  ];
-
   const filteredEvents = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
     return events.filter((event) => {
-      const matchesSearch =
-        event.title?.toLowerCase().includes(query) ||
-        event.city?.toLowerCase().includes(query) ||
-        event.venue?.toLowerCase().includes(query);
+      const term = search.toLowerCase();
+
+      const matchesSearch = [
+        event.title,
+        event.city,
+        event.venue,
+        event.description,
+      ].some((value) => (value || "").toLowerCase().includes(term));
 
       const matchesCategory =
         category === "All" || event.category === category;
@@ -72,154 +54,205 @@ function App() {
     });
   }, [events, search, category]);
 
+  async function openShowtimes(event) {
+    setSelectedEvent(event);
+    setSelectedShow(null);
+    setSelectedSeats([]);
+    setShows([]);
+    setShowsError("");
+    setShowsLoading(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/shows/event/${event._id}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not load showtimes.");
+      }
+
+      setShows(data.shows || []);
+    } catch (err) {
+      setShowsError(err.message);
+    } finally {
+      setShowsLoading(false);
+    }
+  }
+
+  function toggleSeat(seatNumber) {
+    setSelectedSeats((previous) =>
+      previous.includes(seatNumber)
+        ? previous.filter((seat) => seat !== seatNumber)
+        : [...previous, seatNumber]
+    );
+  }
+
+  const totalPrice = selectedSeats.length * (selectedShow?.pricePerSeat || 0);
+
   return (
-    <div className="app">
-      <header className="navbar">
-        <a className="brand" href="/">
-          <span className="brand-icon">E</span>
-          Eventify
-        </a>
-        <span className="nav-caption">Discover experiences</span>
+    <main className="app">
+      <header className="page-header">
+        <h1>Event Booking</h1>
+        <p>Find your next experience.</p>
       </header>
 
-      <main className="container">
-        <section className="hero">
-          <p className="eyebrow">YOUR NEXT EXPERIENCE STARTS HERE</p>
-          <h1>Find events worth remembering.</h1>
-          <p className="hero-description">
-            Discover concerts, movies, sports, and live experiences
-            around you.
-          </p>
+      <section className="filters">
+        <input
+          type="text"
+          placeholder="Search events, cities, venues..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-          <div className="search-bar">
-            <span aria-hidden="true">⌕</span>
-            <input
-              type="search"
-              placeholder="Search by event, city or venue..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search events"
-            />
-          </div>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+          <option value="Movie">Movie</option>
+          <option value="Concert">Concert</option>
+          <option value="Sports">Sports</option>
+          <option value="Theatre">Theatre</option>
+          <option value="Other">Other</option>
+        </select>
+      </section>
+
+      {loading && <p>Loading events...</p>}
+      {error && <p className="error">{error}</p>}
+
+      {!loading && !error && (
+        <section className="event-grid">
+          {filteredEvents.map((event) => (
+            <article className="event-card" key={event._id}>
+              {event.posterUrl && (
+                <img
+                  className="event-poster"
+                  src={event.posterUrl}
+                  alt={event.title}
+                />
+              )}
+
+              <div className="event-card-content">
+                <span className="category-badge">{event.category}</span>
+                <h2>{event.title}</h2>
+                <p>{event.description}</p>
+                <p>
+                  {event.venue} {event.city ? `• ${event.city}` : ""}
+                </p>
+                <p>
+                  Starting at ₹{event.startingPrice ?? "—"}
+                </p>
+
+                <button onClick={() => openShowtimes(event)}>
+                  View Showtimes
+                </button>
+              </div>
+            </article>
+          ))}
         </section>
+      )}
 
-        <section className="events-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">EXPLORE</p>
-              <h2>Discover events</h2>
-            </div>
-            <span className="event-count">
-              {filteredEvents.length} events
-            </span>
-          </div>
+      {!loading && !error && filteredEvents.length === 0 && (
+        <p>No events match your search.</p>
+      )}
 
-          <div className="filters" aria-label="Filter by category">
-            {categories.map((item) => (
+      {selectedEvent && (
+        <section className="booking-section">
+          <button
+            className="secondary-button"
+            onClick={() => {
+              setSelectedEvent(null);
+              setSelectedShow(null);
+              setSelectedSeats([]);
+            }}
+          >
+            ← Back to Events
+          </button>
+
+          <h2>Showtimes: {selectedEvent.title}</h2>
+
+          {showsLoading && <p>Loading showtimes...</p>}
+          {showsError && <p className="error">{showsError}</p>}
+
+          {!showsLoading && !showsError && shows.length === 0 && (
+            <p>No upcoming showtimes are available for this event.</p>
+          )}
+
+          <div className="show-list">
+            {shows.map((show) => (
               <button
-                key={item}
-                className={`filter-chip ${
-                  category === item ? "active" : ""
+                key={show._id}
+                className={`show-card ${
+                  selectedShow?._id === show._id ? "active" : ""
                 }`}
-                onClick={() => setCategory(item)}
-                aria-pressed={category === item}
+                onClick={() => {
+                  setSelectedShow(show);
+                  setSelectedSeats([]);
+                }}
               >
-                {item}
+                <strong>
+                  {new Date(show.startsAt).toLocaleString("en-IN", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </strong>
+                <span>{show.venue}</span>
+                <span>₹{show.pricePerSeat} per seat</span>
               </button>
             ))}
           </div>
 
-          {loading && (
-            <p className="state-message">Loading events...</p>
-          )}
+          {selectedShow && (
+            <div className="seat-section">
+              <h2>Select Your Seats</h2>
+              <p className="screen-label">SCREEN / STAGE</p>
 
-          {!loading && error && (
-            <div className="state-message error">
-              <p>{error}</p>
-              <button onClick={() => window.location.reload()}>
-                Try again
-              </button>
-            </div>
-          )}
+              <div className="seat-grid">
+                {Array.from(
+                  { length: Math.min(selectedShow.totalSeats, 40) },
+                  (_, index) => {
+                    const seat = `S${index + 1}`;
+                    const isSelected = selectedSeats.includes(seat);
 
-          {!loading && !error && filteredEvents.length === 0 && (
-            <div className="state-message">
-              <h3>No events found</h3>
-              <p>Try another search or select a different category.</p>
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setCategory("All");
-                }}
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && filteredEvents.length > 0 && (
-            <div className="event-grid">
-              {filteredEvents.map((event) => (
-                <article className="event-card" key={event._id}>
-                  <div className="event-image">
-                    {event.posterUrl ? (
-                      <img
-                        src={event.posterUrl}
-                        alt={event.title}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="poster-placeholder">
-                        <span>{event.category}</span>
-                        <strong>{event.title}</strong>
-                      </div>
-                    )}
-                    <span className="category-badge">
-                      {event.category}
-                    </span>
-                  </div>
-
-                  <div className="event-content">
-                    <h3>{event.title}</h3>
-                    <p className="event-location">
-                      {event.venue}, {event.city}
-                    </p>
-                    <p className="event-description">
-                      {event.description}
-                    </p>
-
-                    <div className="event-footer">
-                      <div>
-                        <span className="price-label">Starting from</span>
-                        <strong className="event-price">
-                          ₹{Number(event.startingPrice).toLocaleString("en-IN")}
-                        </strong>
-                      </div>
+                    return (
                       <button
-                        className="view-button"
-                        onClick={() =>
-                          alert(
-                            "Show and seat selection will be added in a later project step."
-                          )
-                        }
+                        key={seat}
+                        className={`seat ${isSelected ? "selected" : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => toggleSeat(seat)}
                       >
-                        Explore
+                        {seat}
                       </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                    );
+                  }
+                )}
+              </div>
+
+              <p>Green = selected; grey = available.</p>
+              <div className="booking-summary">
+                <p>Seats selected: {selectedSeats.length}</p>
+                <h3>Total: ₹{totalPrice}</h3>
+                <button
+                  disabled={selectedSeats.length === 0}
+                  onClick={() =>
+                    alert(
+                      "Seat selection demo only. Booking and payment are not implemented yet."
+                    )
+                  }
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
         </section>
-      </main>
-
-      <footer className="footer">
-        Eventify · Built as a full-stack learning project
-      </footer>
-    </div>
+      )}
+    </main>
   );
 }
 
 export default App;
+
 
