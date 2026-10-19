@@ -129,10 +129,15 @@ button:disabled {
   align-items: flex-start;
   gap: 8px;
   padding: 14px;
+  min-width: 220px;
+  min-height: 90px;
   border: 1px solid #d7dce8;
   border-radius: 10px;
-  background: white;
+  background: #ffffff;
+  color: #202538;
   text-align: left;
+  position: relative;
+  z-index: 1;
 }
 
 .show-card.active {
