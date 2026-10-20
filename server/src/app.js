@@ -8,6 +8,7 @@ import eventRoutes from "./routes/eventRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import showRoutes from "./routes/showRoutes.js";
 import seatLockRoutes from "./routes/seatLockRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/shows", showRoutes);
 app.use("/api/seat-locks", seatLockRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 const startServer = async () => {
   await connectDB();
