@@ -23,6 +23,43 @@ function isValidSeatNumber(seatNumber, totalSeats) {
   return Number.isSafeInteger(number) && number <= totalSeats;
 }
 
+// GET /api/bookings/my-bookings
+router.get("/my-bookings", authMiddleware, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authenticated user.",
+      });
+    }
+
+    const bookings = await Booking.find({ user: userId })
+      .populate({
+        path: "show",
+        select: "startsAt venue pricePerSeat status event",
+        populate: {
+          path: "event",
+          select: "title category city posterUrl",
+        },
+      })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Fetch bookings error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not fetch bookings.",
+    });
+  }
+});
 // POST /api/bookings
 router.post("/", authMiddleware, async (req, res) => {
   try {
