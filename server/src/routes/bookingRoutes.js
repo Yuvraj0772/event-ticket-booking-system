@@ -196,4 +196,76 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
+
+/* PATCH /api/bookings/:bookingId/cancel */
+router.patch("/:bookingId/cancel", authMiddleware, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { bookingId } = req.params;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authenticated user.",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      user: userId,
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(409).json({
+        success: false,
+        message: "Only pending bookings can be cancelled.",
+      });
+    }
+
+    if (booking.paymentStatus !== "pending") {
+      return res.status(409).json({
+        success: false,
+        message: "Booking payment is not pending.",
+      });
+    }
+
+    booking.status = "cancelled";
+    await booking.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully.",
+      booking: {
+        id: booking._id,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        seats: booking.seats,
+        totalAmount: booking.totalAmount,
+      },
+    });
+  } catch (error) {
+    console.error("Cancel booking error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not cancel booking.",
+    });
+  }
+});
+
+
 export default router;
