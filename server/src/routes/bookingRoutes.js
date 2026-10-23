@@ -268,4 +268,59 @@ router.patch("/:bookingId/cancel", authMiddleware, async (req, res) => {
 });
 
 
+/* GET /api/bookings/:bookingId */
+router.get("/:bookingId", authMiddleware, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { bookingId } = req.params;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authenticated user.",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      user: userId,
+    }).populate({
+      path: "show",
+      select: "startsAt venue pricePerSeat status event",
+      populate: {
+        path: "event",
+        select: "title category city posterUrl",
+      },
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      booking,
+    });
+  } catch (error) {
+    console.error("Fetch booking details error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not fetch booking details.",
+    });
+  }
+});
+
+
+
 export default router;
