@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import redisClient from "../config/redis.js";
 import Show from "../models/Show.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import Booking from "../models/Booking.js";
 
 const router = express.Router();
 const LOCK_DURATION_SECONDS = 600;
@@ -164,5 +165,100 @@ router.delete("/unlock", authMiddleware, async (req, res) => {
     });
   }
 });
+
+
+/* GET /api/seat-locks/:showId/availability */
+router.get("/:showId/availability", async (req, res) => {
+  try {
+    const { showId } = req.params;
+
+    if (!mongoose.isValidObjectId(showId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid show ID.",
+      });
+    }
+
+    const show = await Show.findOne({
+      _id: showId,
+      status: "scheduled",
+      startsAt: { $gt: new Date() },
+    });
+
+    if (!show) {
+      return res.status(404).json({
+        success: false,
+        message: "Upcoming scheduled show not found.",
+      });
+    }
+
+    const bookings = await Booking.find({
+      show: showId,
+      status: { $in: ["pending", "confirmed"] },
+    }).select("seats");
+
+    const bookedSeats = new Set(
+      bookings.flatMap((booking) => booking.seats)
+    );
+
+    const lockKeys = await redisClient.keys(
+      `seat-lock:${showId}:*`
+    );
+
+    const lockedSeats = new Map();
+
+    for (const key of lockKeys) {
+      const seatNumber = key.split(":").pop();
+      const owner = await redisClient.get(key);
+
+      if (owner) {
+        lockedSeats.set(seatNumber, owner);
+      }
+    }
+
+    const seats = [];
+
+    for (let i = 1; i <= show.totalSeats; i++) {
+      const seatNumber = `S${i}`;
+
+      let status = "available";
+
+      if (bookedSeats.has(seatNumber)) {
+        status = "booked";
+      } else if (lockedSeats.has(seatNumber)) {
+        status = "locked";
+      }
+
+      seats.push({
+        seatNumber,
+        status,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      showId,
+      totalSeats: show.totalSeats,
+      availableSeats: seats.filter(
+        (seat) => seat.status === "available"
+      ).length,
+      lockedSeats: seats.filter(
+        (seat) => seat.status === "locked"
+      ).length,
+      bookedSeats: seats.filter(
+        (seat) => seat.status === "booked"
+      ).length,
+      seats,
+    });
+  } catch (error) {
+    console.error("Seat availability error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not fetch seat availability.",
+    });
+  }
+});
+
 
 export default router;
