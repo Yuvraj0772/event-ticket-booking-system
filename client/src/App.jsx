@@ -1,64 +1,108 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthPanel from "./components/AuthPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+const categories = ["All", "Movie", "Concert", "Sports", "Theatre", "Other"];
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatTime(date) {
+  return new Date(date).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function App() {
-  const [token, setToken] = useState(
-    () => localStorage.getItem("token") || ""
-  );
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [authMode, setAuthMode] = useState("login");
+  const [authNotice, setAuthNotice] = useState("");
+
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState("");
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [shows, setShows] = useState([]);
-  const [selectedShow, setSelectedShow] = useState(null);
-  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [eventShows, setEventShows] = useState([]);
   const [showsLoading, setShowsLoading] = useState(false);
   const [showsError, setShowsError] = useState("");
 
-  const [seatMessage, setSeatMessage] = useState("");
-  const [seatError, setSeatError] = useState("");
+  const [selectedShow, setSelectedShow] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
   const [busySeats, setBusySeats] = useState([]);
+  const [bookingMessage, setBookingMessage] = useState("");
+  const [bookingError, setBookingError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const response = await fetch(`${API_URL}/api/events`);
-        if (!response.ok) throw new Error("Could not load events.");
+  const authHeaders = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
 
-        const data = await response.json();
-        setEvents(Array.isArray(data) ? data : data.events || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const loadEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/events`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not load events.");
       }
-    }
 
-    fetchEvents();
+      const eventList = Array.isArray(data) ? data : data.events;
+
+      if (!Array.isArray(eventList)) {
+        throw new Error("The events API returned an unexpected response.");
+      }
+
+      setEvents(eventList);
+    } catch (error) {
+      setEventsError(error.message || "Could not connect to the server.");
+    } finally {
+      setEventsLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
   const filteredEvents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
     return events.filter((event) => {
-      const term = search.toLowerCase();
-
-      const matchesSearch = [
-        event.title,
-        event.city,
-        event.venue,
-        event.description,
-      ].some((value) => (value || "").toLowerCase().includes(term));
-
       const matchesCategory =
         category === "All" || event.category === category;
 
-      return matchesSearch && matchesCategory;
+      const searchableText = [
+        event.title,
+        event.description,
+        event.city,
+        event.venue,
+        event.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return matchesCategory && searchableText.includes(query);
     });
   }, [events, search, category]);
 
@@ -67,116 +111,142 @@ function App() {
 
     const response = await fetch(`${API_URL}/api/seat-locks/unlock`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: authHeaders,
       body: JSON.stringify({ showId, seatNumber }),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.message || `Could not release ${seatNumber}.`);
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || `Could not release seat ${seatNumber}.`);
     }
-
-    return data;
   }
 
   async function releaseSelectedSeats() {
     if (!selectedShow || selectedSeats.length === 0 || !token) return;
 
-    const results = await Promise.allSettled(
-      selectedSeats.map((seat) => releaseSeat(selectedShow._id, seat))
+    const seatsToRelease = [...selectedSeats];
+    const showId = selectedShow._id;
+
+    await Promise.allSettled(
+      seatsToRelease.map((seat) => releaseSeat(showId, seat))
     );
 
-    const failed = results.filter((result) => result.status === "rejected");
+    setSelectedSeats([]);
+    setBusySeats([]);
+  }
 
-    if (failed.length > 0) {
-      setSeatError(
-        "Some locks could not be released. They will expire automatically."
-      );
-    }
+  function switchAuthMode(mode, notice = "") {
+    setAuthMode(mode);
+    setAuthNotice(notice);
+  }
+
+  function handleLogin(newToken) {
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+    setAuthNotice("");
+  }
+
+  async function logout() {
+    await releaseSelectedSeats();
+
+    localStorage.removeItem("token");
+    setToken(null);
+    setAuthMode("login");
+    setAuthNotice("You have been logged out.");
+
+    setSelectedEvent(null);
+    setEventShows([]);
+    setSelectedShow(null);
+    setSelectedSeats([]);
+    setBookingMessage("");
+    setBookingError("");
   }
 
   async function openShowtimes(event) {
-  console.log("1. View Showtimes clicked:", event._id);
-
-  await releaseSelectedSeats();
-  console.log("2. Finished releasing previous seats");
-
-  setSelectedEvent(event);
-  setSelectedShow(null);
-  setSelectedSeats([]);
-  setSeatMessage("");
-  setSeatError("");
-  setShows([]);
-  setShowsError("");
-  setShowsLoading(true);
-
-  console.log("3. Starting showtime API request");
-
-  try {
-    const response = await fetch(
-      `${API_URL}/api/shows/event/${event._id}`
-    );
-
-    console.log("4. Showtime API status:", response.status);
-
-    const data = await response.json();
-    console.log("5. Showtime API response:", data);
-
-    if (!response.ok) {
-      throw new Error(data.message || "Could not load showtimes.");
+    if (selectedEvent?._id === event._id) {
+      await releaseSelectedSeats();
+      setSelectedEvent(null);
+      setEventShows([]);
+      setSelectedShow(null);
+      setShowsError("");
+      setBookingMessage("");
+      setBookingError("");
+      return;
     }
 
-    // setShows(data.shows || []);
-    const availableShows = Array.isArray(data.shows) ? data.shows : [];
-    console.log("Available shows:", availableShows);
-    setShows(availableShows);
-  
+    await releaseSelectedSeats();
 
-  } catch (err) {
-    console.error("Showtime error:", err);
-    setShowsError(err.message);
-  } finally {
-    setShowsLoading(false);
+    setSelectedEvent(event);
+    setEventShows([]);
+    setSelectedShow(null);
+    setShowsError("");
+    setBookingMessage("");
+    setBookingError("");
+    setShowsLoading(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/shows/event/${event._id}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not load showtimes.");
+      }
+
+      const showList = Array.isArray(data)
+        ? data
+        : Array.isArray(data.shows)
+          ? data.shows
+          : [];
+
+      const now = Date.now();
+
+      const upcomingShows = showList
+        .filter(
+          (show) =>
+            show.status === "scheduled" &&
+            new Date(show.startsAt).getTime() > now
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.startsAt).getTime() -
+            new Date(b.startsAt).getTime()
+        );
+
+      setEventShows(upcomingShows);
+    } catch (error) {
+      setShowsError(error.message || "Could not load showtimes.");
+    } finally {
+      setShowsLoading(false);
+    }
   }
-}
-
-
-  
-  
-  
 
   async function toggleSeat(seatNumber) {
     if (!token) {
-      setSeatError("Please log in before selecting seats.");
-      setSeatMessage("");
+      setBookingError("Please log in before selecting seats.");
       return;
     }
 
     if (!selectedShow || busySeats.includes(seatNumber)) return;
 
-    setSeatError("");
-    setSeatMessage("");
+    setBookingError("");
+    setBookingMessage("");
     setBusySeats((previous) => [...previous, seatNumber]);
 
     try {
-      if (selectedSeats.includes(seatNumber)) {
+      const isSelected = selectedSeats.includes(seatNumber);
+
+      if (isSelected) {
         await releaseSeat(selectedShow._id, seatNumber);
 
         setSelectedSeats((previous) =>
           previous.filter((seat) => seat !== seatNumber)
         );
-        setSeatMessage(`${seatNumber} lock released.`);
       } else {
         const response = await fetch(`${API_URL}/api/seat-locks/lock`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: authHeaders,
           body: JSON.stringify({
             showId: selectedShow._id,
             seatNumber,
@@ -186,23 +256,13 @@ function App() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Could not lock this seat.");
+          throw new Error(data.message || `Seat ${seatNumber} is unavailable.`);
         }
 
-        setSelectedSeats((previous) =>
-          previous.includes(seatNumber)
-            ? previous
-            : [...previous, seatNumber]
-        );
-
-        setSeatMessage(
-          `${seatNumber} locked for you for up to ${
-            Math.ceil((data.expiresInSeconds || 600) / 60)
-          } minutes.`
-        );
+        setSelectedSeats((previous) => [...previous, seatNumber]);
       }
-    } catch (err) {
-      setSeatError(err.message);
+    } catch (error) {
+      setBookingError(error.message || "Could not update seat selection.");
     } finally {
       setBusySeats((previous) =>
         previous.filter((seat) => seat !== seatNumber)
@@ -210,186 +270,371 @@ function App() {
     }
   }
 
-  const totalPrice =
-    selectedSeats.length * (selectedShow?.pricePerSeat || 0);
+  async function continueBooking() {
+    if (!token) {
+      setBookingError("Please log in before booking.");
+      return;
+    }
+
+    if (!selectedShow || selectedSeats.length === 0) {
+      setBookingError("Please select a showtime and at least one seat.");
+      return;
+    }
+
+    setActionLoading(true);
+    setBookingError("");
+    setBookingMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          showId: selectedShow._id,
+          seats: selectedSeats,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not create booking.");
+      }
+
+      const booking = data.booking || data;
+
+      setBookingMessage(
+        `Booking created successfully. Booking ID: ${
+          booking._id || booking.id || "Created"
+        }. Payment is not completed yet.`
+      );
+
+      setSelectedSeats([]);
+      setSelectedShow(null);
+      setBookingError("");
+    } catch (error) {
+      setBookingError(error.message || "Could not create booking.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  if (!token) {
+    return (
+      <AuthPanel
+        mode={authMode}
+        onLogin={handleLogin}
+        onSwitchMode={switchAuthMode}
+        notice={authNotice}
+      />
+    );
+  }
 
   return (
     <main className="app">
-      <header className="page-header">
-        <h1>Event Booking</h1>
-        <AuthPanel onLogin={setToken} />
-        <p>Find your next experience.</p>
-      </header>
-
-      <section className="filters">
-        <input
-          type="text"
-          placeholder="Search events, cities, venues..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+      <nav className="navbar">
+        <a
+          className="auth-brand"
+          href="#home"
+          onClick={(event) => {
+            event.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         >
-          <option value="All">All Categories</option>
-          <option value="Movie">Movie</option>
-          <option value="Concert">Concert</option>
-          <option value="Sports">Sports</option>
-          <option value="Theatre">Theatre</option>
-          <option value="Other">Other</option>
-        </select>
-      </section>
+          eventra<span>.</span>
+        </a>
 
-      {loading && <p>Loading events...</p>}
-      {error && <p className="error">{error}</p>}
-
-      {!loading && !error && (
-        <section className="event-grid">
-          {filteredEvents.map((event) => (
-            <article className="event-card" key={event._id}>
-              {event.posterUrl && (
-                <img
-                  className="event-poster"
-                  src={event.posterUrl}
-                  alt={event.title}
-                />
-              )}
-
-              <div className="event-card-content">
-                <span className="category-badge">{event.category}</span>
-                <h2>{event.title}</h2>
-                <p>{event.description}</p>
-                <p>
-                  {event.venue} {event.city ? `• ${event.city}` : ""}
-                </p>
-                <p>Starting at ₹{event.startingPrice ?? "—"}</p>
-
-                <button onClick={() => openShowtimes(event)}>
-                  View Showtimes
-                </button>
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
-
-      {!loading && !error && filteredEvents.length === 0 && (
-        <p>No events match your search.</p>
-      )}
-
-      {selectedEvent && (
-        <section className="booking-section">
+        <div className="nav-actions">
           <button
             className="secondary-button"
-            onClick={async () => {
-              await releaseSelectedSeats();
-              setSelectedEvent(null);
-              setSelectedShow(null);
-              setSelectedSeats([]);
-              setSeatMessage("");
-            }}
+            onClick={() =>
+              document
+                .getElementById("events")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
           >
-            ← Back to Events
+            Explore events
           </button>
 
-          <h2>Showtimes: {selectedEvent.title}</h2>
+          <button className="secondary-button" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </nav>
 
-          {showsLoading && <p>Loading showtimes...</p>}
-          {showsError && <p className="error">{showsError}</p>}
+      <section className="hero" id="home">
+        <div className="hero-content">
+          <p className="eyebrow">YOUR NEXT EXPERIENCE STARTS HERE</p>
+          <h1>Make plans. Make memories.</h1>
+          <p>
+            Discover live shows, music, sports and movies around Indore.
+            Choose your event, select your seats and get ready to go.
+          </p>
 
-          {!showsLoading && !showsError && shows.length === 0 && (
-            <p>No upcoming showtimes are available for this event.</p>
-          )}
+          <button
+            onClick={() =>
+              document
+                .getElementById("events")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            Explore events
+          </button>
+        </div>
+      </section>
 
-          <div className="show-list">
-            {shows.map((show) => (
-              <button
-                key={show._id}
-                className={`show-card ${
-                  selectedShow?._id === show._id ? "active" : ""
-                }`}
-                onClick={async () => {
-                  await releaseSelectedSeats();
-                  setSelectedShow(show);
-                  setSelectedSeats([]);
-                  setSeatMessage("");
-                  setSeatError("");
-                }}
-              >
-                <strong>
-                  {new Date(show.startsAt).toLocaleString("en-IN", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </strong>
-                <span>{show.venue}</span>
-                <span>₹{show.pricePerSeat} per seat</span>
-              </button>
-            ))}
+      <section className="events-section" id="events">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">FIND YOUR NEXT EXPERIENCE</p>
+            <h2>Explore events</h2>
+            <p>Find something worth stepping out for.</p>
           </div>
 
-          {selectedShow && (
-            <div className="seat-section">
-              <h2>Select Your Seats</h2>
-              <p className="screen-label">SCREEN / STAGE</p>
+          <span>{filteredEvents.length} events</span>
+        </div>
 
-              {!token && (
-                <p className="error">Log in before selecting a seat.</p>
-              )}
+        <div className="filters">
+          <input
+            type="search"
+            placeholder="Search events, venues or cities..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
 
-              <div className="seat-grid">
-                {Array.from(
-                  { length: Math.min(selectedShow.totalSeats, 40) },
-                  (_, index) => {
-                    const seat = `S${index + 1}`;
-                    const isSelected = selectedSeats.includes(seat);
-                    const isBusy = busySeats.includes(seat);
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            aria-label="Filter by category"
+          >
+            {categories.map((item) => (
+              <option value={item} key={item}>
+                {item === "All" ? "All categories" : item}
+              </option>
+            ))}
+          </select>
 
-                    return (
-                      <button
-                        key={seat}
-                        className={`seat ${isSelected ? "selected" : ""}`}
-                        aria-pressed={isSelected}
-                        disabled={!token || isBusy}
-                        onClick={() => toggleSeat(seat)}
-                      >
-                        {isBusy ? "..." : seat}
-                      </button>
-                    );
-                  }
+          <button className="secondary-button" onClick={loadEvents}>
+            Refresh
+          </button>
+        </div>
+
+        {eventsLoading && <p>Loading events...</p>}
+
+        {eventsError && (
+          <div className="error">
+            <p>{eventsError}</p>
+            <button className="secondary-button" onClick={loadEvents}>
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!eventsLoading && !eventsError && filteredEvents.length === 0 && (
+          <p>No events found. Try a different search or category.</p>
+        )}
+
+        <div className="event-grid">
+          {filteredEvents.map((event) => {
+            const isOpen = selectedEvent?._id === event._id;
+
+            return (
+              <div className="event-item" key={event._id}>
+                <article className="event-card">
+                  {event.posterUrl ? (
+                    <img
+                      className="event-poster"
+                      src={event.posterUrl}
+                      alt={event.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="event-poster poster-placeholder">
+                      <span>{event.category || "EVENT"}</span>
+                    </div>
+                  )}
+
+                  <div className="event-card-content">
+                    <span className="category-badge">
+                      {event.category || "Event"}
+                    </span>
+
+                    <h2>{event.title}</h2>
+
+                    <p className="event-description">
+                      {event.description || "Discover this upcoming event."}
+                    </p>
+
+                    <p>
+                      <strong>Location:</strong>{" "}
+                      {[event.venue, event.city].filter(Boolean).join(", ") ||
+                        "Indore"}
+                    </p>
+
+                    <p>
+                      <strong>Starting at:</strong> ₹
+                      {event.startingPrice ?? "—"}
+                    </p>
+
+                    <button
+                      onClick={() => openShowtimes(event)}
+                      aria-expanded={isOpen}
+                    >
+                      {isOpen ? "Hide Showtimes" : "Explore Event"}
+                    </button>
+                  </div>
+                </article>
+
+                {isOpen && (
+                  <section className="inline-showtimes">
+                    <h3>Choose a Showtime</h3>
+
+                    {showsLoading ? (
+                      <p>Loading showtimes...</p>
+                    ) : showsError ? (
+                      <div className="error">
+                        <p>{showsError}</p>
+                        <button
+                          className="secondary-button"
+                          onClick={() => openShowtimes(event)}
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    ) : eventShows.length === 0 ? (
+                      <p>
+                        No upcoming showtimes available. Please add future
+                        scheduled shows for this event.
+                      </p>
+                    ) : (
+                      <div className="show-list">
+                        {eventShows.map((show) => (
+                          <button
+                            className={`show-card ${
+                              selectedShow?._id === show._id ? "active" : ""
+                            }`}
+                            key={show._id}
+                            onClick={() => {
+                              setSelectedShow(show);
+                              setSelectedSeats([]);
+                              setBookingMessage("");
+                              setBookingError("");
+                            }}
+                          >
+                            <strong>{formatDate(show.startsAt)}</strong>
+                            <span>{formatTime(show.startsAt)}</span>
+                            <span>{show.venue || event.venue}</span>
+                            <strong>₹{show.pricePerSeat} / seat</strong>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedShow && (
+                      <div className="seat-section">
+                        <h3>Select your seats</h3>
+
+                        <p>
+                          {formatDate(selectedShow.startsAt)} at{" "}
+                          {formatTime(selectedShow.startsAt)}
+                        </p>
+
+                        <div className="screen-label">SCREEN</div>
+
+                        <div className="seat-legend">
+                          <span>
+                            <i className="legend-available" /> Available
+                          </span>
+                          <span>
+                            <i className="legend-selected" /> Selected
+                          </span>
+                        </div>
+
+                        <div className="seat-grid">
+                          {Array.from(
+                            {
+                              length: Math.min(
+                                Math.max(
+                                  Number(selectedShow.totalSeats) || 40,
+                                  1
+                                ),
+                                40
+                              ),
+                            },
+                            (_, index) => `S${index + 1}`
+                          ).map((seat) => {
+                            const isSelected = selectedSeats.includes(seat);
+                            const isBusy = busySeats.includes(seat);
+
+                            return (
+                              <button
+                                type="button"
+                                key={seat}
+                                className={`seat ${
+                                  isSelected ? "selected" : ""
+                                }`}
+                                disabled={isBusy}
+                                onClick={() => toggleSeat(seat)}
+                                aria-pressed={isSelected}
+                                title={seat}
+                              >
+                                {isBusy ? "..." : seat}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="booking-summary">
+                          <p>
+                            Selected seats:{" "}
+                            {selectedSeats.length
+                              ? selectedSeats.join(", ")
+                              : "None"}
+                          </p>
+
+                          <p>
+                            Total: ₹
+                            {selectedSeats.length *
+                              (Number(selectedShow.pricePerSeat) || 0)}
+                          </p>
+
+                          <button
+                            onClick={continueBooking}
+                            disabled={
+                              actionLoading || selectedSeats.length === 0
+                            }
+                          >
+                            {actionLoading
+                              ? "Creating booking..."
+                              : "Continue to Booking"}
+                          </button>
+                        </div>
+
+                        {bookingError && (
+                          <p className="error" role="alert">
+                            {bookingError}
+                          </p>
+                        )}
+
+                        {bookingMessage && (
+                          <p role="status">{bookingMessage}</p>
+                        )}
+                      </div>
+                    )}
+                  </section>
                 )}
               </div>
+            );
+          })}
+        </div>
+      </section>
 
-              <p>Selected seats are temporarily locked for your account.</p>
-
-              {seatMessage && <p role="status">{seatMessage}</p>}
-              {seatError && <p className="error" role="alert">{seatError}</p>}
-
-              <div className="booking-summary">
-                <p>Seats selected: {selectedSeats.length}</p>
-                <h3>Total: ₹{totalPrice}</h3>
-                <button
-                  disabled={selectedSeats.length === 0}
-                  onClick={() =>
-                    alert(
-                      "Seat locks are active. Confirmed booking and payment will be implemented later."
-                    )
-                  }
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
+      <footer className="app-footer">
+        <p>eventra. — Discover more. Experience more.</p>
+      </footer>
     </main>
   );
 }
 
 export default App;
-
-
 
