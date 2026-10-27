@@ -1190,4 +1190,78 @@ h1, h2, h3 {
 }
 
 
+/* Consistent button styling */
+.app button,
+.auth-page button {
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.app button:not(.seat):not(.show-card),
+.auth-page button {
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-weight: 600;
+}
+
+.app button:not(.secondary-button):not(.seat):not(.show-card),
+.auth-page button[type="submit"] {
+  background: linear-gradient(135deg, #8b5cf6, #6d45d9);
+  color: white;
+  border: 1px solid transparent;
+}
+
+.app button:hover:not(:disabled),
+.auth-page button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(139, 92, 246, 0.2);
+}
+
+.app button:disabled,
+.auth-page button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.app .secondary-button {
+  background: transparent;
+  color: inherit;
+  border: 1px solid #594276;
+}
+
+.booking-feedback {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 12px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.booking-success {
+  color: #d9ffe7;
+  background: #123526;
+  border: 1px solid #26754b;
+}
+
+.booking-success h3 {
+  margin: 0 0 8px;
+  color: #86efac;
+}
+
+.booking-feedback.error {
+  color: #fecaca;
+  background: #431d25;
+  border: 1px solid #8f3544;
+}
+
+
+
 

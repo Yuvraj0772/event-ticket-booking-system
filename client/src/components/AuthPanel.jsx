@@ -59,7 +59,7 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
       <div className="auth-visual">
         <a className="brand auth-brand" href="#login">
           <span className="brand-mark">e</span>
-          <span>eventra</span>
+          <span>ShowNest</span>
         </a>
 
         <div className="auth-promo">

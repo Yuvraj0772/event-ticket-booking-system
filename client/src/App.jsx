@@ -270,54 +270,57 @@ function App() {
     }
   }
 
-  async function continueBooking() {
-    if (!token) {
-      setBookingError("Please log in before booking.");
-      return;
-    }
-
-    if (!selectedShow || selectedSeats.length === 0) {
-      setBookingError("Please select a showtime and at least one seat.");
-      return;
-    }
-
-    setActionLoading(true);
-    setBookingError("");
-    setBookingMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/bookings`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          showId: selectedShow._id,
-          seats: selectedSeats,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not create booking.");
-      }
-
-      const booking = data.booking || data;
-
-      setBookingMessage(
-        `Booking created successfully. Booking ID: ${
-          booking._id || booking.id || "Created"
-        }. Payment is not completed yet.`
-      );
-
-      setSelectedSeats([]);
-      setSelectedShow(null);
-      setBookingError("");
-    } catch (error) {
-      setBookingError(error.message || "Could not create booking.");
-    } finally {
-      setActionLoading(false);
-    }
+  
+async function continueBooking() {
+  if (!token) {
+    setBookingError("Please log in before booking.");
+    return;
   }
+
+  if (!selectedShow || selectedSeats.length === 0) {
+    setBookingError("Please select a showtime and at least one seat.");
+    return;
+  }
+
+  setActionLoading(true);
+  setBookingError("");
+  setBookingMessage("");
+
+  try {
+    const response = await fetch(`${API_URL}/api/bookings`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        showId: selectedShow._id,
+        seats: selectedSeats,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Could not create booking.");
+    }
+
+    const booking = data.booking;
+
+    setBookingMessage(
+      `Booking created successfully!\n` +
+      `Booking ID: ${booking.id || booking._id}\n` +
+      `Seats: ${booking.seats.join(", ")}\n` +
+      `Total: ₹${booking.totalAmount}\n` +
+      `Payment status: ${booking.paymentStatus}`
+    );
+
+    setBookingError("");
+    setSelectedSeats([]);
+  } catch (error) {
+    setBookingError(error.message || "Could not create booking.");
+  } finally {
+    setActionLoading(false);
+  }
+}
+
 
   if (!token) {
     return (
@@ -341,7 +344,7 @@ function App() {
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
-          eventra<span>.</span>
+          ShowNest<span>.</span>
         </a>
 
         <div className="nav-actions">
@@ -610,6 +613,21 @@ function App() {
                           </button>
                         </div>
 
+                        
+{bookingError && (
+  <p className="booking-feedback error" role="alert">
+    {bookingError}
+  </p>
+)}
+
+{bookingMessage && (
+  <div className="booking-feedback booking-success" role="status">
+    <h3>Booking Created!</h3>
+    <p>{bookingMessage}</p>
+  </div>
+)}
+
+
                         {bookingError && (
                           <p className="error" role="alert">
                             {bookingError}
@@ -630,11 +648,11 @@ function App() {
       </section>
 
       <footer className="app-footer">
-        <p>eventra. — Discover more. Experience more.</p>
+        <p>ShowNest. — Discover more. Experience more.</p>
       </footer>
     </main>
   );
 }
 
 export default App;
-
+ 
