@@ -1,4 +1,92 @@
 
+// import { useCallback, useEffect, useMemo, useState } from "react";
+// import "./App.css";
+// import AuthPanel from "./components/AuthPanel";
+
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+// const categories = ["All", "Movie", "Concert", "Sports", "Theatre", "Other"];
+
+// function formatDate(date) {
+//   return new Date(date).toLocaleDateString("en-IN", {
+//     day: "numeric",
+//     month: "short",
+//     year: "numeric",
+//   });
+// }
+
+// function formatTime(date) {
+//   return new Date(date).toLocaleTimeString("en-IN", {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//   });
+// }
+
+// function App() {
+//   const [token, setToken] = useState(() => localStorage.getItem("token"));
+//   const [authMode, setAuthMode] = useState("login");
+//   const [authNotice, setAuthNotice] = useState("");
+
+//   const [events, setEvents] = useState([]);
+//   const [eventsLoading, setEventsLoading] = useState(false);
+//   const [eventsError, setEventsError] = useState("");
+
+//   const [search, setSearch] = useState("");
+//   const [category, setCategory] = useState("All");
+
+//   const [selectedEvent, setSelectedEvent] = useState(null);
+//   const [eventShows, setEventShows] = useState([]);
+//   const [showsLoading, setShowsLoading] = useState(false);
+//   const [showsError, setShowsError] = useState("");
+
+//   const [selectedShow, setSelectedShow] = useState(null);
+//   const [selectedSeats, setSelectedSeats] = useState([]);
+//   const [busySeats, setBusySeats] = useState([]);
+//   const [bookingMessage, setBookingMessage] = useState("");
+//   const [bookingError, setBookingError] = useState("");
+//   const [actionLoading, setActionLoading] = useState(false);
+
+//   const authHeaders = useMemo(
+//     () => ({
+//       "Content-Type": "application/json",
+//       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+//     }),
+//     [token]
+//   );
+
+//   const loadEvents = useCallback(async () => {
+//     setEventsLoading(true);
+//     setEventsError("");
+
+//     try {
+//       const response = await fetch(`${API_URL}/api/events`);
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(data.message || "Could not load events.");
+//       }
+
+//       const eventList = Array.isArray(data) ? data : data.events;
+
+//       if (!Array.isArray(eventList)) {
+//         throw new Error("The events API returned an unexpected response.");
+//       }
+
+//       setEvents(eventList);
+//     } catch (error) {
+//       setEventsError(error.message || "Could not connect to the server.");
+//     } finally {
+//       setEventsLoading(false);
+//     }
+//   }, []);
+
+//   useEffect(() => {
+//     loadEvents();
+//   }, [loadEvents]);
+
+
+ 
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthPanel from "./components/AuthPanel";
@@ -270,57 +358,55 @@ function App() {
     }
   }
 
-  
-async function continueBooking() {
-  if (!token) {
-    setBookingError("Please log in before booking.");
-    return;
-  }
-
-  if (!selectedShow || selectedSeats.length === 0) {
-    setBookingError("Please select a showtime and at least one seat.");
-    return;
-  }
-
-  setActionLoading(true);
-  setBookingError("");
-  setBookingMessage("");
-
-  try {
-    const response = await fetch(`${API_URL}/api/bookings`, {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify({
-        showId: selectedShow._id,
-        seats: selectedSeats,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "Could not create booking.");
+  async function continueBooking() {
+    if (!token) {
+      setBookingError("Please log in before booking.");
+      return;
     }
 
-    const booking = data.booking;
+    if (!selectedShow || selectedSeats.length === 0) {
+      setBookingError("Please select a showtime and at least one seat.");
+      return;
+    }
 
-    setBookingMessage(
-      `Booking created successfully!\n` +
-      `Booking ID: ${booking.id || booking._id}\n` +
-      `Seats: ${booking.seats.join(", ")}\n` +
-      `Total: ₹${booking.totalAmount}\n` +
-      `Payment status: ${booking.paymentStatus}`
-    );
-
+    setActionLoading(true);
     setBookingError("");
-    setSelectedSeats([]);
-  } catch (error) {
-    setBookingError(error.message || "Could not create booking.");
-  } finally {
-    setActionLoading(false);
-  }
-}
+    setBookingMessage("");
 
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          showId: selectedShow._id,
+          seats: selectedSeats,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not create booking.");
+      }
+
+      const booking = data.booking;
+
+      setBookingMessage(
+        `Booking created successfully!\n` +
+        `Booking ID: ${booking.id || booking._id}\n` +
+        `Seats: ${booking.seats.join(", ")}\n` +
+        `Total: ₹${booking.totalAmount}\n` +
+        `Payment status: ${booking.paymentStatus}`
+      );
+
+      setBookingError("");
+      setSelectedSeats([]);
+    } catch (error) {
+      setBookingError(error.message || "Could not create booking.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   if (!token) {
     return (
@@ -365,26 +451,36 @@ async function continueBooking() {
         </div>
       </nav>
 
-      <section className="hero" id="home">
-        <div className="hero-content">
-          <p className="eyebrow">YOUR NEXT EXPERIENCE STARTS HERE</p>
-          <h1>Make plans. Make memories.</h1>
-          <p>
-            Discover live shows, music, sports and movies around Indore.
-            Choose your event, select your seats and get ready to go.
-          </p>
+      
+<section className="hero" id="home">
+  <div className="hero-background" />
 
-          <button
-            onClick={() =>
-              document
-                .getElementById("events")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-          >
-            Explore events
-          </button>
-        </div>
-      </section>
+  <div className="hero-content">
+    <p className="eyebrow">YOUR NEXT EXPERIENCE STARTS HERE</p>
+
+    <h1>
+      Make plans.
+      <br />
+      Make memories.
+    </h1>
+
+    <p>
+      Discover live shows, music, sports and movies around Indore.
+      Choose your event, select your seats and get ready to go.
+    </p>
+
+    <button
+      onClick={() =>
+        document
+          .getElementById("events")
+          ?.scrollIntoView({ behavior: "smooth" })
+      }
+    >
+      Explore events
+    </button>
+  </div>
+</section>
+
 
       <section className="events-section" id="events">
         <div className="section-heading">
@@ -440,53 +536,53 @@ async function continueBooking() {
         <div className="event-grid">
           {filteredEvents.map((event) => {
             const isOpen = selectedEvent?._id === event._id;
+            const categoryClass = `category-${String(
+              event.category || "other"
+            ).toLowerCase()}`;
 
             return (
               <div className="event-item" key={event._id}>
-                <article className="event-card">
-                  {event.posterUrl ? (
-                    <img
-                      className="event-poster"
-                      src={event.posterUrl}
-                      alt={event.title}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="event-poster poster-placeholder">
-                      <span>{event.category || "EVENT"}</span>
-                    </div>
-                  )}
+                
+<article className="event-card">
+  <div
+    className={`event-visual category-${String(
+      event.category || "other"
+    ).toLowerCase()}`}
+    style={
+      event.posterUrl
+        ? { backgroundImage: `url("${event.posterUrl}")` }
+        : undefined
+    }
+  >
+    <div className="event-visual-overlay" />
 
-                  <div className="event-card-content">
-                    <span className="category-badge">
-                      {event.category || "Event"}
-                    </span>
+    <div className="event-visual-content">
+      <span className="category-badge">
+        {event.category || "Event"}
+      </span>
 
-                    <h2>{event.title}</h2>
+      <h2>{event.title}</h2>
 
-                    <p className="event-description">
-                      {event.description || "Discover this upcoming event."}
-                    </p>
+      <p>
+        {[event.venue, event.city].filter(Boolean).join(" • ") ||
+          "Discover something new"}
+      </p>
 
-                    <p>
-                      <strong>Location:</strong>{" "}
-                      {[event.venue, event.city].filter(Boolean).join(", ") ||
-                        "Indore"}
-                    </p>
+      <strong>Starting at ₹{event.startingPrice ?? "—"}</strong>
+    </div>
+  </div>
 
-                    <p>
-                      <strong>Starting at:</strong> ₹
-                      {event.startingPrice ?? "—"}
-                    </p>
+  <div className="event-card-content">
+    <p className="event-description">
+      {event.description || "Discover this upcoming event."}
+    </p>
 
-                    <button
-                      onClick={() => openShowtimes(event)}
-                      aria-expanded={isOpen}
-                    >
-                      {isOpen ? "Hide Showtimes" : "Explore Event"}
-                    </button>
-                  </div>
-                </article>
+    <button onClick={() => openShowtimes(event)}>
+      {isOpen ? "Hide Showtimes" : "Explore Event"}
+    </button>
+  </div>
+</article>
+
 
                 {isOpen && (
                   <section className="inline-showtimes">
@@ -542,7 +638,7 @@ async function continueBooking() {
                           {formatTime(selectedShow.startsAt)}
                         </p>
 
-                        <div className="screen-label">SCREEN</div>
+                        <div className="screen-label">SCREEN / STAGE</div>
 
                         <div className="seat-legend">
                           <span>
@@ -613,29 +709,23 @@ async function continueBooking() {
                           </button>
                         </div>
 
-                        
-{bookingError && (
-  <p className="booking-feedback error" role="alert">
-    {bookingError}
-  </p>
-)}
-
-{bookingMessage && (
-  <div className="booking-feedback booking-success" role="status">
-    <h3>Booking Created!</h3>
-    <p>{bookingMessage}</p>
-  </div>
-)}
-
-
                         {bookingError && (
-                          <p className="error" role="alert">
+                          <p
+                            className="booking-feedback error"
+                            role="alert"
+                          >
                             {bookingError}
                           </p>
                         )}
 
                         {bookingMessage && (
-                          <p role="status">{bookingMessage}</p>
+                          <div
+                            className="booking-feedback booking-success"
+                            role="status"
+                          >
+                            <h3>Booking Created!</h3>
+                            <p>{bookingMessage}</p>
+                          </div>
                         )}
                       </div>
                     )}
@@ -655,4 +745,3 @@ async function continueBooking() {
 }
 
 export default App;
- 

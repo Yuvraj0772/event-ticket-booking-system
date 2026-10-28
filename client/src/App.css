@@ -1263,5 +1263,879 @@ h1, h2, h3 {
 }
 
 
+.auth-error-message,
+.auth-success-message {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-error-message {
+  color: #fecaca;
+  background: #451f29;
+  border: 1px solid #a83e52;
+}
+
+.auth-success-message {
+  color: #bbf7d0;
+  background: #173a2b;
+  border: 1px solid #32835a;
+}
+
+
+/* =========================================
+   ShowNest UI improvements
+   Append to the END of App.css
+========================================= */
+
+.app {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(113, 55, 175, 0.13),
+      transparent 42%
+    ),
+    var(--bg);
+  color: #f5f2fb;
+}
+
+.navbar {
+  height: 68px;
+  padding: 0 clamp(18px, 5vw, 72px);
+  gap: 18px;
+}
+
+.navbar .auth-brand {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  font: 800 23px "Manrope", sans-serif;
+  letter-spacing: -1px;
+  color: #fff;
+}
+
+.navbar .auth-brand span {
+  color: var(--purple);
+}
+
+.nav-actions {
+  gap: 10px;
+}
+
+/* Hero section */
+
+.hero {
+  width: min(1280px, 90%);
+  min-height: 360px;
+  margin: 28px auto 0;
+  padding: clamp(26px, 4vw, 54px);
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 28px;
+  border-radius: 22px;
+  background: linear-gradient(115deg, #211432, #171020 75%);
+  border: 1px solid rgba(194, 148, 255, 0.2);
+}
+
+.hero-content {
+  max-width: 580px;
+}
+
+.hero h1 {
+  max-width: 560px;
+  font-size: clamp(36px, 4.5vw, 60px);
+  letter-spacing: -2.5px;
+}
+
+.hero-content > p {
+  color: #b6a9c7;
+  line-height: 1.8;
+}
+
+/* Theatre stage visual */
+
+.hero-art {
+  height: 260px;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(255, 205, 151, 0.65),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      #4b285c 0%,
+      #24152f 62%,
+      #100d17 100%
+    );
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);
+}
+
+.stage-curtain {
+  position: absolute;
+  top: -10%;
+  bottom: 15%;
+  width: 24%;
+  background: repeating-linear-gradient(
+    90deg,
+    #3a102e 0 12px,
+    #652448 13px 24px
+  );
+  z-index: 2;
+}
+
+.stage-curtain-left {
+  left: 0;
+  border-radius: 0 0 70% 0;
+  box-shadow: 12px 0 22px #170b1c;
+}
+
+.stage-curtain-right {
+  right: 0;
+  border-radius: 0 0 0 70%;
+  box-shadow: -12px 0 22px #170b1c;
+}
+
+.stage-light {
+  position: absolute;
+  top: -15px;
+  width: 2px;
+  height: 220px;
+  background: rgba(255, 220, 170, 0.65);
+  transform-origin: top;
+  filter: drop-shadow(0 0 15px #ffca8b);
+}
+
+.stage-light-one {
+  left: 32%;
+  transform: rotate(22deg);
+}
+
+.stage-light-two {
+  right: 32%;
+  transform: rotate(-22deg);
+}
+
+.stage-platform {
+  position: absolute;
+  bottom: -48px;
+  left: 14%;
+  width: 72%;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(#7b4b7b, #1a1023 70%);
+  border-top: 2px solid #d5a5d5;
+  box-shadow: 0 -8px 35px rgba(221, 151, 255, 0.2);
+}
+
+.stage-copy {
+  position: absolute;
+  z-index: 3;
+  left: 26px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-shadow: 0 2px 12px #13091a;
+}
+
+.stage-copy span {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #f0d6ff;
+}
+
+.stage-copy strong {
+  font: 800 clamp(22px, 2.5vw, 32px) / 1.05 "Manrope", sans-serif;
+}
+
+/* Events and filters */
+
+.events-section {
+  width: min(1280px, 90%);
+  margin: 0 auto;
+  padding: 54px 0 48px;
+}
+
+.section-heading {
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.section-heading h2 {
+  margin-bottom: 7px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 24px 0 28px;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  color: #f5f2fb;
+  background: #15111f;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+}
+
+.filters input:focus,
+.filters select:focus {
+  border-color: #a875ed;
+  box-shadow: 0 0 0 3px rgba(168, 117, 237, 0.12);
+}
+
+.filters select option {
+  background: #15111f;
+}
+
+.filters .secondary-button {
+  height: 44px;
+  white-space: nowrap;
+}
+
+/* Event cards */
+
+.event-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.event-item {
+  min-width: 0;
+}
+
+.event-card {
+  height: 100%;
+  background: #14111d;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.event-poster {
+  display: block;
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+}
+
+.poster-placeholder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 22px;
+  overflow: hidden;
+  background: linear-gradient(
+    145deg,
+    #71468f,
+    #34213f 55%,
+    #17121f
+  );
+}
+
+.poster-placeholder::before {
+  content: "";
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  right: -50px;
+  top: -75px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.poster-placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    rgba(10, 7, 16, 0.72),
+    transparent 75%
+  );
+}
+
+.poster-placeholder span,
+.poster-placeholder strong,
+.poster-placeholder small {
+  position: relative;
+  z-index: 1;
+}
+
+.poster-placeholder span {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #e7ceff;
+}
+
+.poster-placeholder strong {
+  font: 800 22px / 1.2 "Manrope", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.poster-placeholder small {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #e0c9fa;
+}
+
+/* Different category visuals */
+
+.poster-placeholder.category-concert {
+  background:
+    radial-gradient(ellipse at 50% 15%, #ffbf6d 0, transparent 24%),
+    linear-gradient(145deg, #8a315e, #32152f 70%);
+}
+
+.poster-placeholder.category-sports {
+  background:
+    radial-gradient(circle at 70% 25%, #b8e986 0, transparent 23%),
+    linear-gradient(145deg, #23634e, #142d32 70%);
+}
+
+.poster-placeholder.category-movie {
+  background:
+    radial-gradient(circle at 72% 22%, #ffcc7d 0, transparent 20%),
+    linear-gradient(145deg, #394b91, #17172e 70%);
+}
+
+.poster-placeholder.category-theatre {
+  background:
+    radial-gradient(ellipse at 50% 20%, #e5a7c5 0, transparent 24%),
+    linear-gradient(145deg, #782d4b, #241323 70%);
+}
+
+.poster-placeholder.category-other {
+  background:
+    radial-gradient(circle at 75% 20%, #9e8cff 0, transparent 25%),
+    linear-gradient(145deg, #67458f, #21152e 70%);
+}
+
+/* Event details */
+
+.event-card-content {
+  padding: 17px;
+}
+
+.category-badge {
+  display: inline-flex;
+  padding: 5px 9px;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  background: #2b1c3d;
+  border: 1px solid #594276;
+  color: #dfc5ff;
+  font-size: 10px;
+}
+
+.event-card-content h2 {
+  font-size: 17px;
+  line-height: 1.4;
+  margin: 0 0 10px;
+}
+
+.event-card-content p {
+  color: #a49bb4;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.event-description {
+  min-height: 38px;
+}
+
+.event-card-content button {
+  width: 100%;
+}
+
+/* Showtimes and seat booking */
+
+.inline-showtimes {
+  margin-top: 12px;
+  padding: 17px;
+  background: #211b32;
+  border: 1px solid #594276;
+  border-radius: 14px;
+}
+
+.inline-showtimes .show-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+
+.inline-showtimes .show-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.seat-section {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+
+.seat-legend {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 11px;
+  margin: 14px 0;
+}
+
+.seat-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.seat-legend i {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: #292333;
+  border: 1px solid #635b70;
+}
+
+.seat-legend i.legend-selected {
+  background: #ad75ff;
+  border-color: #ad75ff;
+}
+
+.booking-summary {
+  flex-wrap: wrap;
+}
+
+.booking-feedback {
+  white-space: pre-line;
+}
+
+.app-footer {
+  border-top: 1px solid var(--border);
+  padding: 25px 5%;
+  text-align: center;
+  color: #8c829c;
+  font-size: 11px;
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  .event-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero {
+    grid-template-columns: 1fr 0.85fr;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+  .navbar {
+    height: auto;
+    min-height: 66px;
+    padding: 12px 5%;
+  }
+
+  .navbar .auth-brand {
+    font-size: 20px;
+  }
+
+  .nav-actions {
+    gap: 7px;
+  }
+
+  .nav-actions button {
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+
+  .hero {
+    width: 92%;
+    grid-template-columns: 1fr;
+    margin-top: 16px;
+    padding: 26px 22px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+    letter-spacing: -1.8px;
+  }
+
+  .hero-art {
+    height: 190px;
+  }
+
+  .events-section {
+    width: 92%;
+    padding-top: 40px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .filters input {
+    grid-column: 1 / -1;
+  }
+
+  .filters .secondary-button {
+    width: 100%;
+  }
+
+  .event-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .event-poster {
+    height: 215px;
+  }
+
+  .inline-showtimes .show-list {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .booking-summary button {
+    width: 100%;
+  }
+}
+
+
+/* Full-image event cards with text overlay */
+
+.event-visual {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 260px;
+  overflow: hidden;
+  isolation: isolate;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #30203e;
+  transition: background-size 0.3s ease;
+}
+
+/* Category-specific photographic backgrounds when no posterUrl exists */
+.event-visual.category-movie {
+  background-image: url("https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-concert {
+  background-image: url("https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-sports {
+  background-image: url("https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-theatre {
+  background-image: url("https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-other {
+  background-image: url("https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 7, 18, 0.05) 5%,
+    rgba(10, 7, 18, 0.28) 40%,
+    rgba(10, 7, 18, 0.94) 100%
+  );
+}
+
+.event-visual-content {
+  width: 100%;
+  padding: 20px;
+  color: #fff;
+}
+
+.event-visual-content .category-badge {
+  margin-bottom: 10px;
+  background: rgba(30, 17, 44, 0.78);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #f0dcff;
+  backdrop-filter: blur(8px);
+}
+
+.event-visual-content h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+.event-visual-content p {
+  margin: 0 0 10px;
+  color: #eee5f7;
+  font-size: 12px;
+  line-height: 1.5;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.event-visual-content > strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.event-card:hover .event-visual {
+  background-position: center;
+}
+
+@media (max-width: 650px) {
+  .event-visual {
+    min-height: 240px;
+  }
+
+  .event-visual-content h2 {
+    font-size: 21px;
+  }
+}
+
+
+/* =========================================
+   HERO: Background image behind both headlines
+========================================= */
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 440px;
+  width: min(1280px, 90%);
+  margin: 28px auto 0;
+  padding: clamp(28px, 5vw, 64px);
+  overflow: hidden;
+  border-radius: 22px;
+  isolation: isolate;
+  background: #211432;
+  border: 1px solid rgba(194, 148, 255, 0.2);
+  grid-template-columns: 1fr;
+}
+
+.hero-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(12, 7, 20, 0.94) 0%,
+      rgba(17, 9, 27, 0.78) 48%,
+      rgba(17, 9, 27, 0.25) 100%
+    ),
+    url("https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1800&q=90");
+  background-position: center;
+  background-size: cover;
+  transform: scale(1.02);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  width: min(650px, 100%);
+}
+
+.hero-content h1 {
+  color: #fff;
+  font-size: clamp(42px, 6vw, 70px);
+  line-height: 1.04;
+  letter-spacing: -2.5px;
+  text-shadow: 0 3px 20px rgba(0, 0, 0, 0.5);
+}
+
+.hero-content > p:not(.eyebrow) {
+  max-width: 520px;
+  color: #eee5f5;
+  line-height: 1.8;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.hero-content .eyebrow {
+  color: #dfbaff;
+  letter-spacing: 2px;
+}
+
+/* =========================================
+   EVENT CARDS: Images behind text
+========================================= */
+
+.event-visual {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 265px;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: #30203e;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.event-visual.category-movie {
+  background-image: url("https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-concert {
+  background-image: url("https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-sports {
+  background-image: url("https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-theatre {
+  background-image: url("https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual.category-other {
+  background-image: url("https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1000&q=85");
+}
+
+.event-visual-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 7, 18, 0.05) 0%,
+    rgba(10, 7, 18, 0.25) 35%,
+    rgba(10, 7, 18, 0.92) 100%
+  );
+}
+
+.event-visual-content {
+  width: 100%;
+  padding: 20px;
+  color: #fff;
+}
+
+.event-visual-content .category-badge {
+  display: inline-flex;
+  margin-bottom: 10px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: rgba(30, 17, 44, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f0dcff;
+}
+
+.event-visual-content h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.event-visual-content p {
+  margin: 0 0 10px;
+  color: #eee5f7;
+  font-size: 12px;
+  line-height: 1.5;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.event-visual-content > strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.event-card-content {
+  padding: 17px;
+}
+
+.event-card-content .event-description {
+  min-height: auto;
+  line-height: 1.7;
+}
+
+@media (max-width: 650px) {
+  .hero {
+    width: 92%;
+    min-height: 400px;
+    padding: 26px 22px;
+  }
+
+  .hero-content h1 {
+    font-size: 43px;
+    letter-spacing: -1.8px;
+  }
+
+  .hero-background {
+    background-position: 60% center;
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(12, 7, 20, 0.9),
+        rgba(12, 7, 20, 0.55)
+      ),
+      url("https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1000&q=85");
+  }
+
+  .event-visual {
+    min-height: 240px;
+  }
+}
+
+
+/* Comedy Night — dedicated comedy-club background */
+.event-visual.category-comedy {
+  background-image: url("https://images.unsplash.com/photo-1585699324551-f6c309eedeca?auto=format&fit=crop&w=1000&q=85");
+  background-position: center;
+  background-size: cover;
+}
+
+
+
+
+
 
 

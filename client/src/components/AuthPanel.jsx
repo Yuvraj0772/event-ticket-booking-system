@@ -10,34 +10,46 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
     setMessage("");
+    setMessageType("");
+
+    const isRegister = mode === "register";
+
+    if (isRegister && password.length < 8) {
+      setMessage("Password must be at least 8 characters long.");
+      setMessageType("error");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const isRegister = mode === "register";
       const response = await fetch(
         `${API_URL}/api/auth/${isRegister ? "register" : "login"}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
-            isRegister ? { name, email, password } : { email, password }
+            isRegister ? { name: name.trim(), email, password } : { email, password }
           ),
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "Request failed.");
+        throw new Error(data.message || "Request failed. Please try again.");
       }
 
       if (isRegister) {
-        setMessage("Account created successfully. Please log in.");
-        onSwitchMode("login", "Account created successfully. Please log in.");
+        onSwitchMode(
+          "login",
+          "Account created successfully. Please log in."
+        );
         return;
       }
 
@@ -49,30 +61,42 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
       onLogin(data.token);
     } catch (error) {
       setMessage(error.message || "Could not connect to the server.");
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
   }
 
+  const visibleMessage = message || notice;
+  const visibleMessageType =
+    messageType || (notice ? "success" : "");
+
   return (
     <main className="auth-page">
       <div className="auth-visual">
-        <a className="brand auth-brand" href="#login">
-          <span className="brand-mark">e</span>
+        <a
+          className="brand auth-brand"
+          href="#login"
+          onClick={(e) => e.preventDefault()}
+        >
+          <span className="brand-mark">S</span>
           <span>ShowNest</span>
         </a>
 
         <div className="auth-promo">
           <span className="eyebrow">YOUR NEXT EXPERIENCE STARTS HERE</span>
+
           <h1>
             Make plans.
             <br />
             Make <span>memories.</span>
           </h1>
+
           <p>
             Discover live concerts, unforgettable performances and the
             experiences everyone will be talking about.
           </p>
+
           <div className="promo-tags">
             <span>✦ Live music</span>
             <span>✦ Sports</span>
@@ -101,9 +125,16 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
               : "Create an account to discover and book events."}
           </p>
 
-          {(notice || message) && (
-            <p className="success-message" role="status">
-              {message || notice}
+          {visibleMessage && (
+            <p
+              className={
+                visibleMessageType === "error"
+                  ? "auth-error-message"
+                  : "auth-success-message"
+              }
+              role={visibleMessageType === "error" ? "alert" : "status"}
+            >
+              {visibleMessage}
             </p>
           )}
 
@@ -113,6 +144,7 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
                 <label htmlFor="register-name">Full name</label>
                 <input
                   id="register-name"
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name"
@@ -140,16 +172,22 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={
-                mode === "register" ? "Create a password" : "Enter your password"
+                mode === "register"
+                  ? "At least 8 characters"
+                  : "Enter your password"
               }
               autoComplete={
                 mode === "register" ? "new-password" : "current-password"
               }
-              minLength={mode === "register" ? 6 : undefined}
+              minLength={mode === "register" ? 8 : undefined}
               required
             />
 
-            <button className="primary-button auth-submit" disabled={loading}>
+            <button
+              type="submit"
+              className="primary-button auth-submit"
+              disabled={loading}
+            >
               {loading
                 ? "Please wait..."
                 : mode === "login"
@@ -160,14 +198,16 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
 
           <p className="auth-switch">
             {mode === "login"
-              ? "New to Eventra?"
+              ? "New to ShowNest?"
               : "Already have an account?"}{" "}
             <button
               type="button"
               className="text-button"
-              onClick={() =>
-                onSwitchMode(mode === "login" ? "register" : "login", "")
-              }
+              onClick={() => {
+                setMessage("");
+                setMessageType("");
+                onSwitchMode(mode === "login" ? "register" : "login", "");
+              }}
             >
               {mode === "login" ? "Create account" : "Sign in"}
             </button>
@@ -183,4 +223,5 @@ function AuthPanel({ mode, onLogin, onSwitchMode, notice }) {
 }
 
 export default AuthPanel;
+
 
