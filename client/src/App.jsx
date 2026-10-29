@@ -130,9 +130,17 @@ function App() {
   const [selectedShow, setSelectedShow] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [busySeats, setBusySeats] = useState([]);
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [bookingError, setBookingError] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  // const [bookingMessage, setBookingMessage] = useState("");
+  // const [bookingError, setBookingError] = useState("");
+  // const [actionLoading, setActionLoading] = useState(false);
+const [bookingMessage, setBookingMessage] = useState("");
+const [bookingError, setBookingError] = useState("");
+const [actionLoading, setActionLoading] = useState(false);
+
+const [pendingBooking, setPendingBooking] = useState(null);
+const [completedBooking, setCompletedBooking] = useState(null);
+const [paymentLoading, setPaymentLoading] = useState(false);
+const [paymentError, setPaymentError] = useState("");
 
   const authHeaders = useMemo(
     () => ({
@@ -391,6 +399,13 @@ function App() {
 
       const booking = data.booking;
 
+setPendingBooking(booking);
+setCompletedBooking(null);
+setBookingMessage("");
+setBookingError("");
+setPaymentError("");
+setSelectedSeats([]);
+
       setBookingMessage(
         `Booking created successfully!\n` +
         `Booking ID: ${booking.id || booking._id}\n` +
@@ -407,6 +422,50 @@ function App() {
       setActionLoading(false);
     }
   }
+
+  
+async function simulateDemoPayment(outcome) {
+  if (!pendingBooking || paymentLoading) return;
+
+  setPaymentLoading(true);
+  setPaymentError("");
+
+  try {
+    const bookingId = pendingBooking.id || pendingBooking._id;
+
+    const response = await fetch(
+      `${API_URL}/api/bookings/${bookingId}/demo-payment`,
+      {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify({ outcome }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Could not process demo payment.");
+    }
+
+    setPendingBooking(null);
+    setCompletedBooking(data.booking);
+
+    if (outcome === "success") {
+      setBookingMessage("Demo payment successful! Your ticket is confirmed.");
+    } else {
+      setBookingMessage("");
+      setPaymentError(
+        "Demo payment failed. Your booking was marked as failed. You can select seats and create a new booking to try again."
+      );
+    }
+  } catch (error) {
+    setPaymentError(error.message || "Could not process demo payment.");
+  } finally {
+    setPaymentLoading(false);
+  }
+}
+
 
   if (!token) {
     return (
@@ -718,7 +777,7 @@ function App() {
                           </p>
                         )}
 
-                        {bookingMessage && (
+                        {/* {bookingMessage && (
                           <div
                             className="booking-feedback booking-success"
                             role="status"
@@ -726,7 +785,143 @@ function App() {
                             <h3>Booking Created!</h3>
                             <p>{bookingMessage}</p>
                           </div>
-                        )}
+                        )} */}
+                        
+{pendingBooking && (
+  <div className="payment-panel">
+    <p className="eyebrow">SECURE YOUR EXPERIENCE</p>
+    <h3>Complete your booking</h3>
+
+    <div className="payment-summary">
+      <p>
+        <span>Event</span>
+        <strong>{selectedEvent?.title || "ShowNest Event"}</strong>
+      </p>
+
+      <p>
+        <span>Date</span>
+        <strong>
+          {selectedShow ? formatDate(selectedShow.startsAt) : "—"}
+        </strong>
+      </p>
+
+      <p>
+        <span>Time</span>
+        <strong>
+          {selectedShow ? formatTime(selectedShow.startsAt) : "—"}
+        </strong>
+      </p>
+
+      <p>
+        <span>Seats</span>
+        <strong>{pendingBooking.seats.join(", ")}</strong>
+      </p>
+
+      <p className="payment-total">
+        <span>Total amount</span>
+        <strong>₹{pendingBooking.totalAmount}</strong>
+      </p>
+    </div>
+
+    <p className="demo-payment-note">
+      Demo mode: no real money will be charged. Choose an outcome to test
+      the payment flow.
+    </p>
+
+    <div className="payment-actions">
+      <button
+        type="button"
+        disabled={paymentLoading}
+        onClick={() => simulateDemoPayment("success")}
+      >
+        {paymentLoading ? "Processing..." : "✓ Simulate Payment Success"}
+      </button>
+
+      <button
+        type="button"
+        className="secondary-button"
+        disabled={paymentLoading}
+        onClick={() => simulateDemoPayment("failed")}
+      >
+        Simulate Payment Failure
+      </button>
+    </div>
+  </div>
+)}
+
+{completedBooking && (
+  <div
+    className={`ticket-panel ${
+      completedBooking.paymentStatus === "success"
+        ? "ticket-confirmed"
+        : "ticket-failed"
+    }`}
+    role="status"
+  >
+    {completedBooking.paymentStatus === "success" ? (
+      <>
+        <p className="eyebrow">YOU'RE ALL SET</p>
+        <h3>Booking Confirmed!</h3>
+        <p>Your demo payment was successful.</p>
+      </>
+    ) : (
+      <>
+        <h3>Payment Failed</h3>
+        <p>Please select seats and create a new booking to try again.</p>
+      </>
+    )}
+
+    <div className="payment-summary">
+      <p>
+        <span>Booking ID</span>
+        <strong>{completedBooking.id || completedBooking._id}</strong>
+      </p>
+      <p>
+        <span>Seats</span>
+        <strong>{completedBooking.seats.join(", ")}</strong>
+      </p>
+      <p>
+        <span>Amount</span>
+        <strong>₹{completedBooking.totalAmount}</strong>
+      </p>
+      <p>
+        <span>Payment status</span>
+        <strong>{completedBooking.paymentStatus}</strong>
+      </p>
+      <p>
+        <span>Booking status</span>
+        <strong>{completedBooking.status}</strong>
+      </p>
+    </div>
+
+    {completedBooking.paymentStatus === "failed" && (
+      <button
+        type="button"
+        onClick={() => {
+          setCompletedBooking(null);
+          setPaymentError("");
+          setBookingMessage("");
+        }}
+      >
+        Choose Seats Again
+      </button>
+    )}
+  </div>
+)}
+
+{paymentError && (
+  <p className="booking-feedback error" role="alert">
+    {paymentError}
+  </p>
+)}
+
+{bookingMessage && (
+  <div className="booking-feedback booking-success" role="status">
+    <h3>Booking Confirmed!</h3>
+    <p>{bookingMessage}</p>
+  </div>
+)}
+
                       </div>
                     )}
                   </section>

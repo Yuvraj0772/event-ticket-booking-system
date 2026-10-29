@@ -197,6 +197,88 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 
+/* PATCH /api/bookings/:bookingId/demo-payment */
+router.patch("/:bookingId/demo-payment", authMiddleware, async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { bookingId } = req.params;
+    const { outcome } = req.body;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authenticated user.",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    if (!["success", "failed"].includes(outcome)) {
+      return res.status(400).json({
+        success: false,
+        message: "Outcome must be success or failed.",
+      });
+    }
+
+    // Only the owner of a pending booking can process its demo payment.
+    const updatedBooking = await Booking.findOneAndUpdate(
+      {
+        _id: bookingId,
+        user: userId,
+        status: "pending",
+        paymentStatus: "pending",
+      },
+      {
+        $set: {
+          paymentStatus: outcome,
+          status: outcome === "success" ? "confirmed" : "failed",
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedBooking) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Booking not found, not owned by you, or payment has already been processed.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        outcome === "success"
+          ? "Demo payment successful. Booking confirmed!"
+          : "Demo payment failed. Please create a new booking to try again.",
+      booking: {
+        id: updatedBooking._id,
+        showId: updatedBooking.show,
+        seats: updatedBooking.seats,
+        totalAmount: updatedBooking.totalAmount,
+        status: updatedBooking.status,
+        paymentStatus: updatedBooking.paymentStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Demo payment error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Could not process demo payment.",
+    });
+  }
+});
+
+
 /* PATCH /api/bookings/:bookingId/cancel */
 router.patch("/:bookingId/cancel", authMiddleware, async (req, res) => {
   try {
