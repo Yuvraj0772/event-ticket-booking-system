@@ -1,97 +1,11 @@
-
-// import { useCallback, useEffect, useMemo, useState } from "react";
-// import "./App.css";
-// import AuthPanel from "./components/AuthPanel";
-
-// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-// const categories = ["All", "Movie", "Concert", "Sports", "Theatre", "Other"];
-
-// function formatDate(date) {
-//   return new Date(date).toLocaleDateString("en-IN", {
-//     day: "numeric",
-//     month: "short",
-//     year: "numeric",
-//   });
-// }
-
-// function formatTime(date) {
-//   return new Date(date).toLocaleTimeString("en-IN", {
-//     hour: "2-digit",
-//     minute: "2-digit",
-//   });
-// }
-
-// function App() {
-//   const [token, setToken] = useState(() => localStorage.getItem("token"));
-//   const [authMode, setAuthMode] = useState("login");
-//   const [authNotice, setAuthNotice] = useState("");
-
-//   const [events, setEvents] = useState([]);
-//   const [eventsLoading, setEventsLoading] = useState(false);
-//   const [eventsError, setEventsError] = useState("");
-
-//   const [search, setSearch] = useState("");
-//   const [category, setCategory] = useState("All");
-
-//   const [selectedEvent, setSelectedEvent] = useState(null);
-//   const [eventShows, setEventShows] = useState([]);
-//   const [showsLoading, setShowsLoading] = useState(false);
-//   const [showsError, setShowsError] = useState("");
-
-//   const [selectedShow, setSelectedShow] = useState(null);
-//   const [selectedSeats, setSelectedSeats] = useState([]);
-//   const [busySeats, setBusySeats] = useState([]);
-//   const [bookingMessage, setBookingMessage] = useState("");
-//   const [bookingError, setBookingError] = useState("");
-//   const [actionLoading, setActionLoading] = useState(false);
-
-//   const authHeaders = useMemo(
-//     () => ({
-//       "Content-Type": "application/json",
-//       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-//     }),
-//     [token]
-//   );
-
-//   const loadEvents = useCallback(async () => {
-//     setEventsLoading(true);
-//     setEventsError("");
-
-//     try {
-//       const response = await fetch(`${API_URL}/api/events`);
-//       const data = await response.json();
-
-//       if (!response.ok) {
-//         throw new Error(data.message || "Could not load events.");
-//       }
-
-//       const eventList = Array.isArray(data) ? data : data.events;
-
-//       if (!Array.isArray(eventList)) {
-//         throw new Error("The events API returned an unexpected response.");
-//       }
-
-//       setEvents(eventList);
-//     } catch (error) {
-//       setEventsError(error.message || "Could not connect to the server.");
-//     } finally {
-//       setEventsLoading(false);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     loadEvents();
-//   }, [loadEvents]);
-
-
- 
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import AuthPanel from "./components/AuthPanel";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+//const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:5000" : "");
 
 const categories = ["All", "Movie", "Concert", "Sports", "Theatre", "Other"];
 
